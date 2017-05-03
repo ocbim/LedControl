@@ -1,7 +1,8 @@
 import socket
-import template
-import time
+from template import html
+from time import sleep
 import machine
+#from threading import Thread
 
 HOSTP = ('0.0.0.0', 80)
 
@@ -15,14 +16,16 @@ PIN_B = 13
 class LedControl:
 
     def __init__(self, pin_r, pin_g, pin_b):
-        self.pin_r = machine.PWM(machine.Pin(pin_r), freq = 50)
-        self.pin_g = machine.PWM(machine.Pin(pin_g), freq = 50)
-        self.pin_b = machine.PWM(machine.Pin(pin_b), freq = 50)
+        self.pin_r = machine.PWM(machine.Pin(pin_r), freq = 1000)
+        self.pin_g = machine.PWM(machine.Pin(pin_g), freq = 1000)
+        self.pin_b = machine.PWM(machine.Pin(pin_b), freq = 1000)
 
         self.valor_r = 0
         self.valor_g = 0
         self.valor_b = 0
         self.valor_random = 'OFF'
+
+        #self.t = Thread(target=self.randomcolor())
 
     def set(self, r, g, b):
         self.valor_r = int(r)
@@ -42,20 +45,19 @@ class LedControl:
         r = 1000
         g = 0
         b = 0
-        self.set(r, g, b)
         while self.valor_random == 'ON' or 'On' or 'on':
-            time.sleep(1)
-            if r > 0 and b == 0:
-                r -= 4
-                g += 4
-            if g > 0 and r == 0:
-                g -= 4
-                b += 4
-            if b > 0 and g == 0:
-                b -= 4
-                r += 4
-            print(r, g, b)
             self.set(r, g, b)
+            sleep(3)
+            if r > 0 and b == 0:
+                r -= 10
+                g += 10
+            if g > 0 and r == 0:
+                g -= 10
+                b += 10
+            if b > 0 and g == 0:
+                b -= 10
+                r += 10
+            print(self.valor_r, self.valor_g, self.valor_b)
 
     def extraer_url(self, file: object):
         while True:
@@ -88,7 +90,6 @@ class LedControl:
                 self.valor_b = diccionario[i]
             if i == 'random':
                 self.valor_random = diccionario[i]
-                self.randomcolor()
 
     def crear_socket(self, HOST):
 
@@ -98,6 +99,7 @@ class LedControl:
 
         while True:
             cl, addr = s.accept()
+            #self.t.start()
             print("Cliente Conectado desde :", addr)
             cl_file = cl.makefile('rb', 0)
 
@@ -105,7 +107,7 @@ class LedControl:
 
             reponse = 'HTTP/1.1 200 OK\n'
             reponse += 'Content-Type: text/html\n'
-            reponse += template.html % (self.valor_r, self.valor_g, self.valor_b, self.valor_random)
+            reponse += html % (int(self.valor_r), int(self.valor_g), int(self.valor_b), str(self.valor_random))
 
             total_send = 0
             while total_send < len(reponse[total_send:]):
